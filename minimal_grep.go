@@ -2,15 +2,11 @@ package main
 
 import (
 	"fmt"
-
 	"flag"
 	"os"
-
 	"bufio"
 	"io/ioutil"
-
 	"path/filepath"
-
 	"regexp"
 )
 
@@ -72,9 +68,23 @@ func readLineByLine() {
 
 }
 
-func printMatches(matches []string) {
+func colorPurple(term string) string {
+  return "\033[0;35m" + term + "\033[0m"
+}
+
+func colorGreen(term string) string {
+  return "\033[0;32m" + term + "\033[0m"
+}
+
+func colorBlue(term string) string {
+  return "\033[0;34m" + term + "\033[0m"
+}
+
+
+func printMatches(matches []string, filename string) {
 	for _, match := range matches {
-		fmt.Printf("%s", match)
+    filename = colorPurple(filename)
+    fmt.Printf("%s:%s", filename, match)
 	}
 }
 
@@ -93,21 +103,22 @@ func readContent(filename string) string {
 func recursiveSearch(re *regexp.Regexp, filenames []string, dirToExcludePtr *string) {
   fmt.Printf("filenames: %v\n", filenames)
   dirname := filenames[0]
-  err := filepath.Walk(dirname, func(path string, info os.FileInfo, err error) error {
+
+  err := filepath.Walk(dirname, func(path string, fileinfo os.FileInfo, err error) error {
     if err != nil {
       fmt.Printf("prevent panic by handling failure accessing a path %q: %v\n", path, err)
       return err
     }
-    if info.IsDir() && info.Name() == *dirToExcludePtr {
-      //fmt.Printf("skipping a dir without errors: %+v \n", info.Name())
+
+    if fileinfo.IsDir() && fileinfo.Name() == *dirToExcludePtr {
+      //fmt.Printf("skipping a dir without errors: %+v \n", fileinfo.Name())
       return filepath.SkipDir
     }
 
-
-    if !info.IsDir() {
+    if !fileinfo.IsDir() {
       //fmt.Printf("file: %q\n", path)
       matches := search(re, readContent(path))
-      printMatches(matches)
+      printMatches(matches, fileinfo.Name())
     }
 
 
@@ -140,8 +151,7 @@ func main() {
 	for _, char := range pattern {
 		fmt.Println(char)
 	}
-	//re := regexp.MustCompile("[\n]{0,1}.*" + pattern + ".*[\n]{0,1}")
-  re := regexp.MustCompilePOSIX("[\n]{0,1}.*" + pattern + ".*[\n]{0,1}")
+  re := regexp.MustCompilePOSIX(pattern + ".*[\n]")
 
 	// fmt.Println(os.Args)
 	//fmt.Println(content)
@@ -155,11 +165,10 @@ func main() {
     for _, filename := range filenames {
       content := readContent(filename)
       matches := search(re, content)
-      printMatches(matches)
+      printMatches(matches, filename)
     }
   }
 
 	//fmt.Println()
-
 }
 

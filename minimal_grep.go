@@ -4,12 +4,7 @@ import (
 	"fmt"
 	"flag"
 	"os"
-	"bufio"
-	"io/ioutil"
 	"path/filepath"
-	"regexp"
-	"strings"
-	"runtime"
 )
 
 func getArgs() (*bool, *bool, *bool, *bool, *string, string, []string) {
@@ -47,76 +42,6 @@ func getArgs() (*bool, *bool, *bool, *bool, *string, string, []string) {
 	return recursivePtr, perlSyntaxPtr, lineByLinePtr, ignoreCasePtr, dirToExcludePtr, pattern, filenames
 }
 
-func getReader(filename string) (*bufio.Reader, *os.File) {
-
-	if filename == "-" || filename == "" {
-		reader := bufio.NewReader(os.Stdin)
-		var file *os.File
-
-		return reader, file
-	} else {
-		file, _ := os.Open(filename)
-		reader := bufio.NewReader(file)
-
-		return reader, file
-	}
-}
-
-func readAll() {
-
-}
-
-func readLineByLine() {
-
-}
-
-func colorPurple(term string) string {
-  if runtime.GOOS != "windows" {
-    return "\033[0;35m" + term + "\033[0m"
-  }
-
-  return term
-}
-
-func colorGreen(term string) string {
-  if runtime.GOOS != "windows" {
-    return "\033[0;32m" + term + "\033[0m"
-  }
-
-  return term
-}
-
-func colorBlue(term string) string {
-  if runtime.GOOS != "windows" {
-    return "\033[0;34m" + term + "\033[0m"
-  }
-
-  return term
-}
-
-
-func printMatches(matches []string, filename string) {
-        fmt.Printf("matches: %t\n", matches)
-	for _, match := range matches {
-
-    if len(filename) > 0 {
-      filename = colorPurple(filename)
-      fmt.Printf("%s:%s", filename, match)
-    } else {
-      fmt.Printf("%s", match)
-    }
-	}
-}
-
-
-func readContent(filename string) string {
-	reader, file := getReader(filename)
-	defer file.Close()
-
-	bytes, _ := ioutil.ReadAll(reader)
-	return string(bytes)
-}
-
 type search_fn func(string, string, bool) []string
 
 func recursiveSearch(pattern string, filenames []string, dirToExcludePtr *string, ignoreCase bool, search search_fn) {
@@ -134,13 +59,11 @@ err := filepath.Walk(dirname, func(path string, fileinfo os.FileInfo, err error)
       return filepath.SkipDir
     }
 
-
     if !fileinfo.IsDir() {
       //fmt.Printf("file: %q\n", path)
       matches := search(pattern, readContent(path), ignoreCase)
       printMatches(matches, fileinfo.Name())
     }
-
 
     //fmt.Printf("visited file or dir: %q\n", path)
     return nil
@@ -174,42 +97,16 @@ func main() {
 
 	// fmt.Println(os.Args)
 	//fmt.Println(content)
-    var search search_fn
-    if !*perlSyntaxPtr {
-      search = func(pattern string, content string, ignoreCase bool)  ([]string) {
-      if ignoreCase {
-        pattern = strings.ToLower(pattern)
-        content = strings.ToLower(content)
-      }
-
-        lines := strings.Split(content, "\n")
-        var matches []string
-
-        linenumber := 1
-        for _, line := range lines {
-          if strings.Contains(line, pattern) {
-            matches = append(matches, line + "\n")
-          }
-          linenumber++
-        }
-
-        return matches
-    }} else {
-      search = func(pattern string, content string, ignoreCase bool) ([]string) {
-        if ignoreCase {
-          //panic("Not implemented")
-          //pattern = "(?i)" + pattern
-          pattern = strings.ToLower(pattern)
-          content = strings.ToLower(content)
-        }
-
-        re := regexp.MustCompilePOSIX(pattern + ".*[\n]")
-        return re.FindAllString(content, -1)
-    }}
 
 
+  var search search_fn
+  if !*perlSyntaxPtr {
+    search = searchString
+  } else {
+    search = searchRegex
+  }
 
-	if *recursivePtr == true {
+  if *recursivePtr == true {
     recursiveSearch(pattern, filenames, dirToExcludePtr, *ignoreCasePtr, search)
 	} else {
     // filename globbing search

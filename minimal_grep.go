@@ -8,6 +8,7 @@ import (
 	"io/ioutil"
 	"path/filepath"
 	"regexp"
+	"strings"
 )
 
 func getArgs() (*bool, *bool, *bool, *bool, *string, string, []string) {
@@ -82,15 +83,18 @@ func colorBlue(term string) string {
 
 
 func printMatches(matches []string, filename string) {
+        fmt.Printf("matches: %t\n", matches)
 	for _, match := range matches {
-    filename = colorPurple(filename)
-    fmt.Printf("%s:%s", filename, match)
+
+    if len(filename) > 0 {
+      filename = colorPurple(filename)
+      fmt.Printf("%s:%s", filename, match)
+    } else {
+      fmt.Printf("%s", match)
+    }
 	}
 }
 
-func search(re *regexp.Regexp, content string)  ([]string) {
-  return re.FindAllString(content, -1)
-}
 
 func readContent(filename string) string {
 	reader, file := getReader(filename)
@@ -100,12 +104,14 @@ func readContent(filename string) string {
 	return string(bytes)
 }
 
-func recursiveSearch(re *regexp.Regexp, filenames []string, dirToExcludePtr *string) {
+type search_fn func(string, string, bool) []string
+
+func recursiveSearch(pattern string, filenames []string, dirToExcludePtr *string, ignoreCase bool, search search_fn) {
   fmt.Printf("filenames: %v\n", filenames)
   dirname := filenames[0]
 
-  err := filepath.Walk(dirname, func(path string, fileinfo os.FileInfo, err error) error {
-    if err != nil {
+err := filepath.Walk(dirname, func(path string, fileinfo os.FileInfo, err error) error {
+  if err != nil {
       fmt.Printf("prevent panic by handling failure accessing a path %q: %v\n", path, err)
       return err
     }
@@ -115,9 +121,10 @@ func recursiveSearch(re *regexp.Regexp, filenames []string, dirToExcludePtr *str
       return filepath.SkipDir
     }
 
+
     if !fileinfo.IsDir() {
       //fmt.Printf("file: %q\n", path)
-      matches := search(re, readContent(path))
+      matches := search(pattern, readContent(path), ignoreCase)
       printMatches(matches, fileinfo.Name())
     }
 
@@ -151,20 +158,51 @@ func main() {
 	for _, char := range pattern {
 		fmt.Println(char)
 	}
-  re := regexp.MustCompilePOSIX(pattern + ".*[\n]")
 
 	// fmt.Println(os.Args)
 	//fmt.Println(content)
+    var search search_fn
+    if !*perlSyntaxPtr {
+      search = func(pattern string, content string, ignoreCase bool)  ([]string) {
+      if ignoreCase {
+        pattern = strings.ToLower(pattern)
+        content = strings.ToLower(content)
+      }
+
+        lines := strings.Split(content, "\n")
+        var matches []string
+
+        linenumber := 1
+        for _, line := range lines {
+          if strings.Contains(line, pattern) {
+            matches = append(matches, line + "\n")
+          }
+          linenumber++
+        }
+
+        return matches
+    }} else {
+      search = func(pattern string, content string, ignoreCase bool) ([]string) {
+        if ignoreCase {
+          //panic("Not implemented")
+          //pattern = "(?i)" + pattern
+          pattern = strings.ToLower(pattern)
+          content = strings.ToLower(content)
+        }
+
+        re := regexp.MustCompilePOSIX(pattern + ".*[\n]")
+        return re.FindAllString(content, -1)
+    }}
 
 
 
 	if *recursivePtr == true {
-    recursiveSearch(re, filenames, dirToExcludePtr)
+    recursiveSearch(pattern, filenames, dirToExcludePtr, *ignoreCasePtr, search)
 	} else {
-    // accomodate for filename globbing
+    // filename globbing search
     for _, filename := range filenames {
       content := readContent(filename)
-      matches := search(re, content)
+      matches := search(pattern, content, *ignoreCasePtr)
       printMatches(matches, filename)
     }
   }

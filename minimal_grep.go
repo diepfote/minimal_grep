@@ -9,6 +9,7 @@ import (
 	"path/filepath"
 	"regexp"
 	"strings"
+	"runtime"
 )
 
 func getArgs() (*bool, *bool, *bool, *bool, *string, string, []string) {
@@ -70,15 +71,27 @@ func readLineByLine() {
 }
 
 func colorPurple(term string) string {
-  return "\033[0;35m" + term + "\033[0m"
+  if runtime.GOOS != "windows" {
+    return "\033[0;35m" + term + "\033[0m"
+  }
+
+  return term
 }
 
 func colorGreen(term string) string {
-  return "\033[0;32m" + term + "\033[0m"
+  if runtime.GOOS != "windows" {
+    return "\033[0;32m" + term + "\033[0m"
+  }
+
+  return term
 }
 
 func colorBlue(term string) string {
-  return "\033[0;34m" + term + "\033[0m"
+  if runtime.GOOS != "windows" {
+    return "\033[0;34m" + term + "\033[0m"
+  }
+
+  return term
 }
 
 

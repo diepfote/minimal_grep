@@ -1,9 +1,9 @@
 package main
 
 import (
-	"os"
 	"bufio"
 	"io/ioutil"
+	"os"
 )
 
 func getReader(filename string) (*bufio.Reader, *os.File) {
@@ -28,4 +28,3 @@ func readContent(filename string) string {
 	bytes, _ := ioutil.ReadAll(reader)
 	return string(bytes)
 }
-

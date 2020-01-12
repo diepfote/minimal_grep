@@ -46,6 +46,10 @@ type search_fn func(string, string, bool, bool) map[int]string
 func recursiveSearch(pattern string, filenames []string, dirToExcludePtr *string, ignoreCase bool, lineByLine bool, perlSyntax bool, search search_fn) {
 	dirname := filenames[0]
 
+  if len(dirname) < 1 {
+    dirname = "."
+  }
+
 	err := filepath.Walk(dirname, func(path string, fileinfo os.FileInfo, err error) error {
 		if err != nil {
 			fmt.Printf("prevent panic by handling failure accessing a path %q: %v\n", path, err)

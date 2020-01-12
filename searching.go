@@ -5,34 +5,49 @@ import (
 	"strings"
 )
 
-func searchString(pattern string, content string, ignoreCase bool) []string {
+func searchString(pattern string, content string, ignoreCase bool, lineByLine bool) map[int]string {
 	if ignoreCase {
 		pattern = strings.ToLower(pattern)
 		content = strings.ToLower(content)
 	}
 
 	lines := strings.Split(content, "\n")
-	var matches []string
+  matches := make(map[int]string)
 
-	linenumber := 1
-	for _, line := range lines {
+	for index, line := range lines {
 		if strings.Contains(line, pattern) {
-			matches = append(matches, line+"\n")
+      matches[index] = line + "\n"
 		}
-		linenumber++
 	}
 
 	return matches
 }
 
-func searchRegex(pattern string, content string, ignoreCase bool) []string {
+func searchRegex(pattern string, content string, ignoreCase bool, lineByLine bool) map[int]string {
 	if ignoreCase {
 		//panic("Not implemented")
-		//pattern = "(?i)" + pattern
-		pattern = strings.ToLower(pattern)
-		content = strings.ToLower(content)
+    //pattern = `(?i)` + pattern
+    pattern = strings.ToLower(pattern)
+    content = strings.ToLower(content)
 	}
 
-	re := regexp.MustCompilePOSIX(pattern + ".*[\n]")
-	return re.FindAllString(content, -1)
+	re := regexp.MustCompilePOSIX(pattern + ".*[\n]{0,1}")
+  matches := re.FindAllString(content, -1)
+
+  results := make(map[int]string)
+  if !lineByLine {
+    for index, match := range matches {
+      results[index] = match
+    }
+  } else {
+	  lines := strings.Split(content, "\n")
+    for index, line := range lines {
+      match := re.FindString(line)
+      if len(match) > 0 {
+        results[index] = match + "\n"
+      }
+    }}
+
+    return results
 }
+

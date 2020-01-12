@@ -3,7 +3,33 @@ package main
 import (
 	"fmt"
 	"runtime"
+  "regexp"
+	"strconv"
+	"strings"
 )
+
+func colorTerm(line string, term string, perlSyntax bool, ignoreCase bool) string {
+	if runtime.GOOS != "windows" {
+
+	if ignoreCase {
+    // TODO this is half-assed
+
+    term = strings.ToLower(term)
+    line = strings.ToLower(line)
+	}
+
+    if perlSyntax {
+      // TODO fix match replaced with regex
+
+	    re := regexp.MustCompilePOSIX(term)
+      return re.ReplaceAllString(line, "\033[1;31m" + term + "\033[0m")
+    } else {
+		  return  strings.ReplaceAll(line, term, "\033[1;31m" + term + "\033[0m")
+    }
+	}
+
+	return line
+}
 
 func colorPurple(term string) string {
 	if runtime.GOOS != "windows" {
@@ -29,14 +55,29 @@ func colorBlue(term string) string {
 	return term
 }
 
-func printMatches(matches []string, filename string) {
-	for _, match := range matches {
+func printMatches(matches map[int]string, pattern string, filename string, lineByLine bool, perlSyntax bool, ignoreCase bool) {
+  blue_colon := colorBlue(":")
+
+	for linenumber, match := range matches {
+
+    match = colorTerm(match, pattern, perlSyntax, ignoreCase)
 
 		if len(filename) > 0 {
 			filename = colorPurple(filename)
-			fmt.Printf("%s:%s", filename, match)
+
+      if lineByLine {
+        fmt.Printf("%s%s%s%s%s", colorGreen(strconv.Itoa(linenumber)), blue_colon, filename,
+                                 blue_colon, match)
+      } else {
+        fmt.Printf("%s%s%s", filename, blue_colon, match)
+      }
 		} else {
-			fmt.Printf("%s", match)
+      if lineByLine {
+			  fmt.Printf("%s%s%s", colorGreen(strconv.Itoa(linenumber)), blue_colon, match)
+      } else {
+			  fmt.Printf("%s", match)
+      }
 		}
 	}
 }
+

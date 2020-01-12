@@ -41,9 +41,9 @@ func getArgs() (*bool, *bool, *bool, *bool, *string, string, []string) {
 	return recursivePtr, perlSyntaxPtr, lineByLinePtr, ignoreCasePtr, dirToExcludePtr, pattern, filenames
 }
 
-type search_fn func(string, string, bool) []string
+type search_fn func(string, string, bool, bool) map[int]string
 
-func recursiveSearch(pattern string, filenames []string, dirToExcludePtr *string, ignoreCase bool, search search_fn) {
+func recursiveSearch(pattern string, filenames []string, dirToExcludePtr *string, ignoreCase bool, lineByLine bool, perlSyntax bool, search search_fn) {
 	dirname := filenames[0]
 
 	err := filepath.Walk(dirname, func(path string, fileinfo os.FileInfo, err error) error {
@@ -57,8 +57,8 @@ func recursiveSearch(pattern string, filenames []string, dirToExcludePtr *string
 		}
 
 		if !fileinfo.IsDir() {
-			matches := search(pattern, readContent(path), ignoreCase)
-			printMatches(matches, fileinfo.Name())
+			matches := search(pattern, readContent(path), ignoreCase, lineByLine)
+			printMatches(matches, pattern, fileinfo.Name(), lineByLine, perlSyntax, ignoreCase)
 		}
 
 		return nil
@@ -75,8 +75,6 @@ func main() {
 
 	recursivePtr, perlSyntaxPtr, lineByLinePtr, ignoreCasePtr, dirToExcludePtr, pattern, filenames := getArgs()
 
-  fmt.Printf("lineByLine: %v\n", *lineByLinePtr)
-
 	var search search_fn
 	if !*perlSyntaxPtr {
 		search = searchString
@@ -85,13 +83,13 @@ func main() {
 	}
 
 	if *recursivePtr == true {
-		recursiveSearch(pattern, filenames, dirToExcludePtr, *ignoreCasePtr, search)
+		recursiveSearch(pattern, filenames, dirToExcludePtr, *ignoreCasePtr, *lineByLinePtr, *perlSyntaxPtr, search)
 	} else {
 		// filename globbing search
 		for _, filename := range filenames {
 			content := readContent(filename)
-			matches := search(pattern, content, *ignoreCasePtr)
-			printMatches(matches, filename)
+			matches := search(pattern, content, *ignoreCasePtr, *lineByLinePtr)
+			printMatches(matches, pattern, filename, *lineByLinePtr, *perlSyntaxPtr, *ignoreCasePtr)
 		}
 	}
 

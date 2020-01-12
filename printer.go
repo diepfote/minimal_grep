@@ -66,14 +66,14 @@ func printMatches(matches map[int]string, pattern string, filename string, lineB
 			filename = colorPurple(filename)
 
 			if lineByLine {
-				fmt.Printf("%s%s%s%s%s", filename, blue_colon, colorGreen(strconv.Itoa(linenumber)),
+				fmt.Printf("%s%s%s%s%s", filename, blue_colon, colorGreen(strconv.Itoa(linenumber+1)),
 					blue_colon, match)
 			} else {
 				fmt.Printf("%s%s%s", filename, blue_colon, match)
 			}
 		} else {
 			if lineByLine {
-				fmt.Printf("%s%s%s", colorGreen(strconv.Itoa(linenumber)), blue_colon, match)
+				fmt.Printf("%s%s%s", colorGreen(strconv.Itoa(linenumber+1)), blue_colon, match)
 			} else {
 				fmt.Printf("%s", match)
 			}

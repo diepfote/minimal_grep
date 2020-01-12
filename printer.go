@@ -2,8 +2,8 @@ package main
 
 import (
 	"fmt"
+	"regexp"
 	"runtime"
-  "regexp"
 	"strconv"
 	"strings"
 )
@@ -11,21 +11,21 @@ import (
 func colorTerm(line string, term string, perlSyntax bool, ignoreCase bool) string {
 	if runtime.GOOS != "windows" {
 
-	if ignoreCase {
-    // TODO this is half-assed
+		if ignoreCase {
+			// TODO this is half-assed
 
-    term = strings.ToLower(term)
-    line = strings.ToLower(line)
-	}
+			term = strings.ToLower(term)
+			line = strings.ToLower(line)
+		}
 
-    if perlSyntax {
-      // TODO fix match replaced with regex
+		if perlSyntax {
+			// TODO fix match replaced with regex
 
-	    re := regexp.MustCompilePOSIX(term)
-      return re.ReplaceAllString(line, "\033[1;31m" + term + "\033[0m")
-    } else {
-		  return  strings.ReplaceAll(line, term, "\033[1;31m" + term + "\033[0m")
-    }
+			re := regexp.MustCompilePOSIX(term)
+			return re.ReplaceAllString(line, "\033[1;31m"+term+"\033[0m")
+		} else {
+			return strings.ReplaceAll(line, term, "\033[1;31m"+term+"\033[0m")
+		}
 	}
 
 	return line
@@ -56,28 +56,27 @@ func colorBlue(term string) string {
 }
 
 func printMatches(matches map[int]string, pattern string, filename string, lineByLine bool, perlSyntax bool, ignoreCase bool) {
-  blue_colon := colorBlue(":")
+	blue_colon := colorBlue(":")
 
 	for linenumber, match := range matches {
 
-    match = colorTerm(match, pattern, perlSyntax, ignoreCase)
+		match = colorTerm(match, pattern, perlSyntax, ignoreCase)
 
 		if len(filename) > 0 {
 			filename = colorPurple(filename)
 
-      if lineByLine {
-        fmt.Printf("%s%s%s%s%s", colorGreen(strconv.Itoa(linenumber)), blue_colon, filename,
-                                 blue_colon, match)
-      } else {
-        fmt.Printf("%s%s%s", filename, blue_colon, match)
-      }
+			if lineByLine {
+				fmt.Printf("%s%s%s%s%s", colorGreen(strconv.Itoa(linenumber)), blue_colon, filename,
+					blue_colon, match)
+			} else {
+				fmt.Printf("%s%s%s", filename, blue_colon, match)
+			}
 		} else {
-      if lineByLine {
-			  fmt.Printf("%s%s%s", colorGreen(strconv.Itoa(linenumber)), blue_colon, match)
-      } else {
-			  fmt.Printf("%s", match)
-      }
+			if lineByLine {
+				fmt.Printf("%s%s%s", colorGreen(strconv.Itoa(linenumber)), blue_colon, match)
+			} else {
+				fmt.Printf("%s", match)
+			}
 		}
 	}
 }
-

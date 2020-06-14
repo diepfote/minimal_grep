@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"strings"
 )
 
 func getArgs() (*bool, *bool, *bool, *bool, *string, string, []string) {
@@ -13,7 +14,7 @@ func getArgs() (*bool, *bool, *bool, *bool, *string, string, []string) {
 	perlSyntaxPtr := flag.Bool("P", false, "PATTERN in perl syntax")
 	lineByLinePtr := flag.Bool("n", false, "search line by line")
 	ignoreCasePtr := flag.Bool("i", false, "ignore case")
-	dirToExcludePtr := flag.String("exclude-dir", "", "DIR to exclude")
+	dirsToExclude := flag.String("exclude-dirs", "", "DIRs to exclude (separated by commas ',')")
 
 	flag.Parse()
 
@@ -38,12 +39,12 @@ func getArgs() (*bool, *bool, *bool, *bool, *string, string, []string) {
 		filenames = flag.Args()[1:len(flag.Args())]
 	}
 
-	return recursivePtr, perlSyntaxPtr, lineByLinePtr, ignoreCasePtr, dirToExcludePtr, pattern, filenames
+	return recursivePtr, perlSyntaxPtr, lineByLinePtr, ignoreCasePtr, dirsToExclude, pattern, filenames
 }
 
 type search_fn func(string, string, bool, bool) map[int]string
 
-func recursiveSearch(pattern string, filenames []string, dirToExcludePtr *string, ignoreCase bool, lineByLine bool, perlSyntax bool, search search_fn) {
+func recursiveSearch(pattern string, filenames []string, dirsToExclude *string, ignoreCase bool, lineByLine bool, perlSyntax bool, search search_fn) {
 	dirname := filenames[0]
 
 	if len(dirname) < 1 {
@@ -56,8 +57,10 @@ func recursiveSearch(pattern string, filenames []string, dirToExcludePtr *string
 			return err
 		}
 
-		if fileinfo.IsDir() && fileinfo.Name() == *dirToExcludePtr {
-			return filepath.SkipDir
+		for _, dirname := range strings.Split(*dirsToExclude, ",") {
+			if fileinfo.IsDir() && fileinfo.Name() == dirname {
+				return filepath.SkipDir
+			}
 		}
 
 		if !fileinfo.IsDir() {
@@ -77,7 +80,7 @@ func recursiveSearch(pattern string, filenames []string, dirToExcludePtr *string
 
 func main() {
 
-	recursivePtr, perlSyntaxPtr, lineByLinePtr, ignoreCasePtr, dirToExcludePtr, pattern, filenames := getArgs()
+	recursivePtr, perlSyntaxPtr, lineByLinePtr, ignoreCasePtr, dirsToExclude, pattern, filenames := getArgs()
 
 	var search search_fn
 	if !*perlSyntaxPtr {
@@ -87,7 +90,7 @@ func main() {
 	}
 
 	if *recursivePtr == true {
-		recursiveSearch(pattern, filenames, dirToExcludePtr, *ignoreCasePtr, *lineByLinePtr, *perlSyntaxPtr, search)
+		recursiveSearch(pattern, filenames, dirsToExclude, *ignoreCasePtr, *lineByLinePtr, *perlSyntaxPtr, search)
 	} else {
 		// filename globbing search
 		for _, filename := range filenames {

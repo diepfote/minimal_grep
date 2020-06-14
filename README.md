@@ -2,9 +2,6 @@
 
 A minimal implementation of grep written in go.
 
-Behavior that does not match grep:
-* only one directory can be excluded
-
 ## TODOs
 * maybe add go-routines
 
@@ -20,10 +17,10 @@ Behavior that does not match grep:
 ###  Options
 ```
 Usage of ./minimal_grep:
-    -P    PATTERN in perl syntax
-    -exclude-dir string
-        DIR to exclude
-    -i    ignore case
-    -n    search line by line
-    -r    recursive search, first filename/dirname will be taken as start-off point
+  -P    PATTERN in perl syntax
+  -exclude-dirs string
+        DIRs to exclude (separated by commas ',')
+  -i    ignore case
+  -n    search line by line
+  -r    recursive search, first filename/dirname will be taken as start-off point
 ```

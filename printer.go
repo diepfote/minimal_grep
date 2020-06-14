@@ -2,7 +2,6 @@ package main
 
 import (
 	"fmt"
-	"regexp"
 	"runtime"
 	"strconv"
 	"strings"
@@ -18,14 +17,7 @@ func colorTerm(line string, term string, perlSyntax bool, ignoreCase bool) strin
 			line = strings.ToLower(line)
 		}
 
-		if perlSyntax {
-			// TODO fix match replaced with regex
-
-			re := regexp.MustCompilePOSIX(term)
-			return re.ReplaceAllString(line, "\033[1;31m"+term+"\033[0m")
-		} else {
-			return strings.ReplaceAll(line, term, "\033[1;31m"+term+"\033[0m")
-		}
+		return strings.ReplaceAll(line, term, "\033[1;31m"+term+"\033[0m")
 	}
 
 	return line
@@ -77,6 +69,10 @@ func printMatches(matches map[int]string, pattern string, filename string, lineB
 			} else {
 				fmt.Printf("%s", match)
 			}
+		}
+		if len(matches) > 1 {
+			fmt.Printf("\n")
+
 		}
 	}
 }
